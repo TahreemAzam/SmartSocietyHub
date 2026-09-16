@@ -1,0 +1,147 @@
+// ============================================================
+// HORIZON RESIDENCIA — DESIGN TOKENS
+//
+// Single source of truth for color, type, spacing, radius,
+// shadow and motion values used across the application.
+// ============================================================
+
+:root {
+  // ------------------------------------------------------------
+  // COLOR — brand
+  // ------------------------------------------------------------
+
+  // Deep navy (primary brand color — chrome, headings, CTAs)
+  --color-navy-900: #0c1f30;
+  --color-navy-800: #132c42;
+  --color-navy-700: #1b3b57;
+  --color-navy-600: #244c6e;
+  --color-navy-500: #305f87;
+
+  // Warm white / soft grey (surfaces)
+  --color-warm-white: #faf8f4;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f4f1ea;
+  --color-grey-100: #ece8e0;
+  --color-grey-200: #ddd8cd;
+  --color-grey-300: #c7c1b3;
+  --color-grey-400: #a39c8b;
+  --color-grey-500: #7d7666;
+  --color-grey-600: #5c564a;
+
+  // Muted gold (accent — used sparingly)
+  --color-gold-300: #e3cea0;
+  --color-gold-400: #cdab6d;
+  --color-gold-500: #b7924f;
+  --color-gold-600: #96773c;
+
+  // ------------------------------------------------------------
+  // COLOR — semantic
+  // ------------------------------------------------------------
+
+  --color-success-500: #3f7d58;
+  --color-success-100: #e3efe6;
+
+  --color-danger-500: #b3413a;
+  --color-danger-100: #f7e6e4;
+
+  --color-warning-500: #b7822f;
+  --color-warning-100: #f6edd9;
+
+  --color-info-500: #2f6f8f;
+  --color-info-100: #e3eef2;
+
+  // ------------------------------------------------------------
+  // COLOR — text
+  // ------------------------------------------------------------
+
+  --color-text-primary: var(--color-navy-900);
+  --color-text-secondary: var(--color-grey-600);
+  --color-text-muted: var(--color-grey-500);
+  --color-text-inverse: var(--color-warm-white);
+  --color-text-link: var(--color-navy-700);
+
+  // ------------------------------------------------------------
+  // COLOR — borders
+  // ------------------------------------------------------------
+
+  --color-border: var(--color-grey-200);
+  --color-border-strong: var(--color-grey-300);
+  --color-border-focus: var(--color-navy-600);
+
+  // ------------------------------------------------------------
+  // TYPOGRAPHY
+  // ------------------------------------------------------------
+
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-body: "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1.0625rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.625rem;
+  --fs-2xl: 2rem;
+  --fs-3xl: 2.75rem;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --lh-tight: 1.2;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.7;
+
+  // ------------------------------------------------------------
+  // SPACING (4px base scale)
+  // ------------------------------------------------------------
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  // ------------------------------------------------------------
+  // RADIUS
+  // ------------------------------------------------------------
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  // ------------------------------------------------------------
+  // SHADOW
+  // ------------------------------------------------------------
+
+  --shadow-sm: 0 1px 2px rgba(12, 31, 48, 0.06);
+  --shadow-md: 0 4px 16px rgba(12, 31, 48, 0.08);
+  --shadow-lg: 0 16px 40px rgba(12, 31, 48, 0.14);
+  --shadow-focus: 0 0 0 3px rgba(36, 76, 110, 0.18);
+
+  // ------------------------------------------------------------
+  // MOTION
+  // ------------------------------------------------------------
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  // ------------------------------------------------------------
+  // LAYOUT
+  // ------------------------------------------------------------
+
+  --sidebar-width: 264px;
+  --sidebar-width-collapsed: 76px;
+  --header-height: 68px;
+  --content-max-width: 1280px;
+}

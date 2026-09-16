@@ -1,0 +1,158 @@
+<app-page-header
+  title="Properties"
+  subtitle="Manage every house and block in the society, and track vacancy at a glance."
+>
+  <button type="button" class="btn btn-primary" (click)="openCreateForm()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    Add Property
+  </button>
+</app-page-header>
+
+<div class="stat-row">
+  <div class="stat-card card">
+    <p class="stat-label">Total Properties</p>
+    <p class="stat-value">{{ properties().length }}</p>
+  </div>
+
+  <div class="stat-card card">
+    <p class="stat-label">Vacant</p>
+    <p class="stat-value stat-vacant">{{ vacantCount() }}</p>
+  </div>
+
+  <div class="stat-card card">
+    <p class="stat-label">Occupied</p>
+    <p class="stat-value stat-occupied">{{ occupiedCount() }}</p>
+  </div>
+</div>
+
+<div class="card table-card">
+  <div class="table-toolbar">
+    <div class="search-field">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <input
+        type="search"
+        placeholder="Search by house number or block..."
+        [value]="searchTerm()"
+        (input)="searchTerm.set($any($event.target).value)"
+        aria-label="Search properties"
+      />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="table-scroll">
+      <table class="table">
+        <tbody>
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <tr>
+              <td><div class="skeleton" style="width: 90px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 60px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 70px; height: 20px; border-radius: 999px;"></div></td>
+              <td></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (loadError()) {
+    <div class="alert alert-danger" role="alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <span>{{ loadError() }}</span>
+    </div>
+  } @else if (filteredProperties().length === 0) {
+    <app-empty-state
+      [title]="properties().length === 0 ? 'No properties yet' : 'No matching properties'"
+      [message]="properties().length === 0 ? 'Add the first house or block to start managing the society.' : 'Try a different search term.'"
+    >
+      <svg icon viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"></rect><line x1="9" y1="8" x2="9" y2="8.01"></line><line x1="15" y1="8" x2="15" y2="8.01"></line></svg>
+    </app-empty-state>
+  } @else {
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>House Number</th>
+            <th>Block</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (property of filteredProperties(); track property.id) {
+            <tr>
+              <td>{{ property.houseNumber }}</td>
+              <td>{{ property.block }}</td>
+              <td>
+                <span class="badge" [class.badge-success]="property.status === 'Vacant'" [class.badge-info]="property.status === 'Occupied'">
+                  {{ property.status }}
+                </span>
+              </td>
+              <td>
+                <div class="table-actions">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="openEditForm(property)">Edit</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="deleteProperty(property)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (showForm()) {
+  <app-modal
+    [title]="editingProperty() ? 'Edit Property' : 'Add Property'"
+    subtitle="House number and block together must be unique."
+    (closed)="closeForm()"
+  >
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (formError()) {
+        <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>{{ formError() }}</span>
+        </div>
+      }
+
+      <div class="form-grid">
+        <div class="field" [class.is-invalid]="form.controls.houseNumber.invalid && form.controls.houseNumber.touched">
+          <label class="field-label" for="houseNumber">House Number</label>
+          <input id="houseNumber" class="input" formControlName="houseNumber" placeholder="e.g. 12-A" />
+          @if (form.controls.houseNumber.invalid && form.controls.houseNumber.touched) {
+            <p class="field-error">House number is required.</p>
+          }
+        </div>
+
+        <div class="field" [class.is-invalid]="form.controls.block.invalid && form.controls.block.touched">
+          <label class="field-label" for="block">Block</label>
+          <input id="block" class="input" formControlName="block" placeholder="e.g. Block A" />
+          @if (form.controls.block.invalid && form.controls.block.touched) {
+            <p class="field-error">Block is required.</p>
+          }
+        </div>
+
+        <div class="field form-grid-full">
+          <label class="field-label" for="status">Status</label>
+          <select id="status" class="select" formControlName="status">
+            <option value="Vacant">Vacant</option>
+            <option value="Occupied">Occupied</option>
+          </select>
+          <p class="field-hint">
+            Status is normally set automatically when a resident is assigned to or removed
+            from this property. Only change it here to correct a data entry mistake.
+          </p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeForm()" [disabled]="saving()">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [class.btn-loading]="saving()" [disabled]="saving()">
+          {{ editingProperty() ? 'Save Changes' : 'Create Property' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

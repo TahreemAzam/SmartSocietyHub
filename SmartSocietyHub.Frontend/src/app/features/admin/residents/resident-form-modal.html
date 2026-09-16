@@ -1,0 +1,185 @@
+<app-modal
+  [title]="residentToEdit ? 'Edit Resident' : 'Add Resident'"
+  subtitle="A login account is created automatically for new residents."
+  size="lg"
+  (closed)="closedModal.emit()"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (formError()) {
+      <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span>{{ formError() }}</span>
+      </div>
+    }
+
+    <p class="section-title">Resident Details</p>
+
+    <div class="form-grid">
+      <div class="field" [class.is-invalid]="form.controls.fullName.invalid && form.controls.fullName.touched">
+        <label class="field-label" for="fullName">Full Name</label>
+        <input id="fullName" class="input" formControlName="fullName" placeholder="e.g. Ayesha Khan" />
+        @if (form.controls.fullName.invalid && form.controls.fullName.touched) {
+          <p class="field-error">Full name is required.</p>
+        }
+      </div>
+
+      <div class="field" [class.is-invalid]="form.controls.cnic.invalid && form.controls.cnic.touched">
+        <label class="field-label" for="cnic">CNIC</label>
+        <input
+          id="cnic"
+          class="input"
+          formControlName="cnic"
+          placeholder="12345-1234567-1"
+          (input)="onCnicInput($event, form.controls.cnic)"
+        />
+        @if (form.controls.cnic.invalid && form.controls.cnic.touched) {
+          <p class="field-error">Enter a valid CNIC in the format 12345-1234567-1.</p>
+        }
+      </div>
+
+      <div class="field" [class.is-invalid]="form.controls.phoneNumber.invalid && form.controls.phoneNumber.touched">
+        <label class="field-label" for="phoneNumber">Phone Number</label>
+        <input id="phoneNumber" class="input" formControlName="phoneNumber" placeholder="e.g. 0300-1234567" />
+        @if (form.controls.phoneNumber.invalid && form.controls.phoneNumber.touched) {
+          <p class="field-error">Phone number is required.</p>
+        }
+      </div>
+
+      <div class="field" [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched">
+        <label class="field-label" for="email">Email (Optional)</label>
+        <input id="email" type="email" class="input" formControlName="email" placeholder="Used as the login email if provided" />
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <p class="field-error">Enter a valid email address.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="dateOfBirth">Date of Birth (Optional)</label>
+        <input id="dateOfBirth" type="date" class="input" formControlName="dateOfBirth" />
+      </div>
+
+      <div class="field" [class.is-invalid]="form.controls.gender.invalid && form.controls.gender.touched">
+        <label class="field-label" for="gender">Gender</label>
+        <select id="gender" class="select" formControlName="gender">
+          <option value="" disabled>Select gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        @if (form.controls.gender.invalid && form.controls.gender.touched) {
+          <p class="field-error">Gender is required.</p>
+        }
+      </div>
+
+      <div class="field" [class.is-invalid]="form.controls.propertyId.invalid && form.controls.propertyId.touched">
+        <label class="field-label" for="propertyId">Property</label>
+        <select id="propertyId" class="select" formControlName="propertyId">
+          <option value="" disabled>Select a property</option>
+          @for (property of availableProperties(); track property.id) {
+            <option [value]="property.id">
+              House {{ property.houseNumber }}, Block {{ property.block }}
+              {{ property.status === 'Occupied' ? '(current)' : '' }}
+            </option>
+          }
+        </select>
+        @if (availableProperties().length === 0) {
+          <p class="field-hint">No vacant properties are available. Add one under Properties first.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="status">Status</label>
+        <select id="status" class="select" formControlName="status">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="family-section">
+      <div class="family-header">
+        <p class="section-title">Family Members</p>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="addFamilyMember()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          Add Family Member
+        </button>
+      </div>
+
+      @if (form.controls.familyMembers.controls.length === 0) {
+        <p class="field-hint">No family members added.</p>
+      }
+
+      @for (member of form.controls.familyMembers.controls; track member; let i = $index) {
+        <div class="family-card" [formGroup]="member">
+          <div class="family-card-header">
+            <span>Family Member {{ i + 1 }}</span>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="removeFamilyMember(i)">Remove</button>
+          </div>
+
+          <div class="form-grid">
+            <div class="field" [class.is-invalid]="member.controls.fullName.invalid && member.controls.fullName.touched">
+              <label class="field-label">Full Name</label>
+              <input class="input" formControlName="fullName" />
+            </div>
+
+            <div class="field" [class.is-invalid]="member.controls.cnic.invalid && member.controls.cnic.touched">
+              <label class="field-label">CNIC</label>
+              <input
+                class="input"
+                formControlName="cnic"
+                placeholder="12345-1234567-1"
+                (input)="onCnicInput($event, member.controls.cnic)"
+              />
+            </div>
+
+            <div class="field" [class.is-invalid]="member.controls.phoneNumber.invalid && member.controls.phoneNumber.touched">
+              <label class="field-label">Phone Number</label>
+              <input class="input" formControlName="phoneNumber" />
+            </div>
+
+            <div class="field" [class.is-invalid]="member.controls.email.invalid && member.controls.email.touched">
+              <label class="field-label">Email (Optional)</label>
+              <input type="email" class="input" formControlName="email" />
+            </div>
+
+            <div class="field">
+              <label class="field-label">Date of Birth (Optional)</label>
+              <input type="date" class="input" formControlName="dateOfBirth" />
+            </div>
+
+            <div class="field" [class.is-invalid]="member.controls.gender.invalid && member.controls.gender.touched">
+              <label class="field-label">Gender</label>
+              <select class="select" formControlName="gender">
+                <option value="" disabled>Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="field" [class.is-invalid]="member.controls.relationship.invalid && member.controls.relationship.touched">
+              <label class="field-label">Relationship</label>
+              <select class="select" formControlName="relationship">
+                <option value="" disabled>Select relationship</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Child">Child</option>
+                <option value="Parent">Parent</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="closedModal.emit()" [disabled]="saving()">
+        Cancel
+      </button>
+      <button type="submit" class="btn btn-primary" [class.btn-loading]="saving()" [disabled]="saving()">
+        {{ residentToEdit ? 'Save Changes' : 'Create Resident' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

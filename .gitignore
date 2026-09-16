@@ -1,0 +1,42 @@
+## ---------- .NET Core (Backend) ----------
+bin/
+obj/
+out/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+publish/
+
+# Secret / environment-specific config — NEVER commit these
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+*.env
+.env
+
+## ---------- Angular (Frontend) ----------
+node_modules/
+dist/
+.angular/
+.angular/cache/
+npm-debug.log
+yarn-error.log
+*.log
+
+# Angular environment files with secrets (keep environment.ts if it's safe/public-only)
+environment.local.ts
+environment.secret.ts
+
+## ---------- Editor / OS ----------
+.vscode/
+.idea/
+.vs/
+.DS_Store
+Thumbs.db
+
+## ---------- Database ----------
+*.sql.bak
+pgdata/

@@ -1,0 +1,27 @@
+<div class="modal-overlay" (click)="onOverlayClick()">
+  <div
+    class="modal card"
+    [class.modal-lg]="size === 'lg'"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-header">
+      <div>
+        <h3>{{ title }}</h3>
+        @if (subtitle) {
+          <p class="modal-subtitle">{{ subtitle }}</p>
+        }
+      </div>
+
+      <button type="button" class="modal-close" (click)="closed.emit()" aria-label="Close dialog">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+    </header>
+
+    <div class="modal-body">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>

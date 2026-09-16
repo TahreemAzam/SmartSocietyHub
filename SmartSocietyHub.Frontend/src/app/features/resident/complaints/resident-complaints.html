@@ -1,0 +1,159 @@
+<app-page-header title="My Complaints" subtitle="Raise a new complaint or track the status of an existing one.">
+  <button type="button" class="btn btn-primary" (click)="openCreateForm()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    New Complaint
+  </button>
+</app-page-header>
+
+<div class="card table-card">
+  @if (loading()) {
+    <div class="table-scroll">
+      <table class="table">
+        <tbody>
+          @for (i of [1, 2, 3]; track i) {
+            <tr>
+              <td><div class="skeleton" style="width: 160px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 90px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 80px; height: 20px; border-radius: 999px;"></div></td>
+              <td></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (loadError()) {
+    <div class="alert alert-danger" role="alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <span>{{ loadError() }}</span>
+    </div>
+  } @else if (complaints().length === 0) {
+    <app-empty-state
+      title="No complaints yet"
+      message="If something needs attention at home, raise a complaint and the management will assign it to maintenance staff."
+    >
+      <svg icon viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"></rect><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"></path></svg>
+      <button type="button" class="btn btn-primary btn-sm" (click)="openCreateForm()">New Complaint</button>
+    </app-empty-state>
+  } @else {
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (complaint of complaints(); track complaint.id) {
+            <tr>
+              <td>{{ complaint.title }}</td>
+              <td class="table-cell-secondary">{{ complaint.category }}</td>
+              <td>
+                <span class="badge" [class]="badgeClass(complaint.status)">{{ complaint.status }}</span>
+              </td>
+              <td class="table-cell-secondary">{{ complaint.createdAt | date: 'mediumDate' }}</td>
+              <td>
+                <div class="table-actions">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="viewComplaint(complaint)">View</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (showForm()) {
+  <app-modal title="New Complaint" (closed)="closeForm()">
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (formError()) {
+        <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>{{ formError() }}</span>
+        </div>
+      }
+
+      <div class="field" [class.is-invalid]="form.controls.title.invalid && form.controls.title.touched" style="margin-bottom: var(--space-5);">
+        <label class="field-label" for="title">Title</label>
+        <input id="title" class="input" formControlName="title" placeholder="e.g. Kitchen tap leaking" />
+        @if (form.controls.title.invalid && form.controls.title.touched) {
+          <p class="field-error">Title is required.</p>
+        }
+      </div>
+
+      <div class="field" [class.is-invalid]="form.controls.category.invalid && form.controls.category.touched" style="margin-bottom: var(--space-5);">
+        <label class="field-label" for="category">Category</label>
+        <select id="category" class="select" formControlName="category">
+          <option value="" disabled>Select a category</option>
+          @for (category of categories; track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+        @if (form.controls.category.invalid && form.controls.category.touched) {
+          <p class="field-error">Category is required.</p>
+        }
+      </div>
+
+      <div class="field" [class.is-invalid]="form.controls.description.invalid && form.controls.description.touched">
+        <label class="field-label" for="description">Description</label>
+        <textarea id="description" class="input" formControlName="description" rows="4" placeholder="Describe the issue in detail..."></textarea>
+        @if (form.controls.description.invalid && form.controls.description.touched) {
+          <p class="field-error">Please describe the issue.</p>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeForm()" [disabled]="saving()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [class.btn-loading]="saving()" [disabled]="saving()">
+          Submit Complaint
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (viewingComplaint(); as complaint) {
+  <app-modal title="Complaint Details" (closed)="viewingComplaint.set(null)">
+    <dl class="detail-grid">
+      <div>
+        <dt>Title</dt>
+        <dd>{{ complaint.title }}</dd>
+      </div>
+      <div>
+        <dt>Category</dt>
+        <dd>{{ complaint.category }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd><span class="badge" [class]="badgeClass(complaint.status)">{{ complaint.status }}</span></dd>
+      </div>
+      <div>
+        <dt>Created</dt>
+        <dd>{{ complaint.createdAt | date: 'medium' }}</dd>
+      </div>
+      <div class="detail-full">
+        <dt>Description</dt>
+        <dd>{{ complaint.description }}</dd>
+      </div>
+    </dl>
+
+    @if (complaint.status === 'Resolved') {
+      <div class="resolution-actions">
+        <p class="section-title">Is this resolved to your satisfaction?</p>
+        <div class="form-actions" style="border-top: none; padding-top: 0; justify-content: flex-start;">
+          <button type="button" class="btn btn-secondary" [disabled]="actioning()" (click)="rejectResolution(complaint)">
+            Not Satisfied
+          </button>
+          <button type="button" class="btn btn-primary" [class.btn-loading]="actioning()" [disabled]="actioning()" (click)="acceptResolution(complaint)">
+            Accept Resolution
+          </button>
+        </div>
+      </div>
+    }
+  </app-modal>
+}

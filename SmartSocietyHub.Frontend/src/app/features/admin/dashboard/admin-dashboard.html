@@ -1,0 +1,39 @@
+<app-page-header
+  title="Welcome back, {{ auth.currentUser()?.fullName }}"
+  subtitle="Here's a quick view of Horizon Residencia's management tools."
+>
+</app-page-header>
+
+<div class="stat-row">
+  <div class="stat-card card">
+    <p class="stat-label">Total Properties</p>
+    <p class="stat-value">{{ totalProperties() ?? '—' }}</p>
+  </div>
+
+  <div class="stat-card card">
+    <p class="stat-label">Vacant</p>
+    <p class="stat-value stat-vacant">{{ vacantProperties() ?? '—' }}</p>
+  </div>
+
+  <div class="stat-card card">
+    <p class="stat-label">Occupied</p>
+    <p class="stat-value stat-occupied">{{ occupiedProperties() ?? '—' }}</p>
+  </div>
+</div>
+
+<h2 class="section-heading">Society Management</h2>
+
+<div class="quick-links">
+  @for (link of quickLinks; track link.path) {
+    <a class="quick-link card" [routerLink]="link.path">
+      <span class="quick-link-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path [attr.d]="link.icon"></path></svg>
+      </span>
+
+      <div>
+        <p class="quick-link-label">{{ link.label }}</p>
+        <p class="quick-link-desc">{{ link.description }}</p>
+      </div>
+    </a>
+  }
+</div>

@@ -1,0 +1,228 @@
+:host {
+  display: block;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ================================================================
+// BRAND PANEL
+// ================================================================
+
+.brand-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-12) var(--space-12) var(--space-8);
+  background: linear-gradient(160deg, var(--color-navy-900) 0%, var(--color-navy-700) 100%);
+  overflow: hidden;
+  color: var(--color-text-inverse);
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+}
+
+.brand-panel-glow {
+  position: absolute;
+  inset: -20% -10% auto auto;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(205, 171, 109, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.brand-panel-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  margin: auto 0;
+}
+
+// Residential skyline illustration, anchored to the bottom of the panel
+// so it reads as a distant community horizon behind the brand copy
+// rather than competing with it. Sits above the ambient glow but below
+// the text/footer (via the explicit z-index on those two).
+.brand-skyline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50%;
+  min-height: 240px;
+  overflow: hidden;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+}
+
+// Blends the space ABOVE the illustration into the navy background so
+// the heading/tagline stay legible. This band starts near the rooftops
+// (not from the panel's bottom edge) so it never washes out the houses
+// themselves — only the empty "sky" area above them.
+.brand-skyline-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 40%;
+  height: 26%;
+  background: linear-gradient(
+    to top,
+    rgba(12, 31, 48, 0) 0%,
+    var(--color-navy-900) 100%
+  );
+  pointer-events: none;
+}
+
+.brand-copy .eyebrow {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.18em;
+  color: var(--color-gold-300);
+}
+
+.brand-copy h1 {
+  margin: 0 0 var(--space-5);
+  font-size: clamp(2rem, 3.2vw, var(--fs-3xl));
+  font-weight: var(--fw-medium);
+  color: var(--color-text-inverse);
+}
+
+.brand-tagline {
+  max-width: 380px;
+  font-size: var(--fs-md);
+  line-height: var(--lh-relaxed);
+  color: rgba(250, 248, 244, 0.72);
+}
+
+.brand-panel-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.footer-rule {
+  height: 1px;
+  width: 32px;
+  background: rgba(250, 248, 244, 0.35);
+}
+
+.brand-panel-footer p {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  color: rgba(250, 248, 244, 0.55);
+}
+
+// ================================================================
+// FORM PANEL
+// ================================================================
+
+.form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-6);
+  background: var(--color-warm-white);
+}
+
+.form-panel-inner {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.mobile-brand {
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+
+  @media (max-width: 900px) {
+    display: flex;
+  }
+}
+
+// The mark defaults to gold for the navy brand panel; on the mobile
+// header it sits on the warm-white form panel instead, so switch it to
+// navy there for proper contrast.
+.mobile-brand app-brand-mark {
+  color: var(--color-navy-900);
+  filter: none;
+}
+
+.mobile-brand-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--color-navy-900);
+}
+
+.form-header h2 {
+  font-size: var(--fs-2xl);
+  margin-bottom: var(--space-2);
+}
+
+.form-header p {
+  color: var(--color-text-secondary);
+  font-size: var(--fs-base);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.field-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-link);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.login-form .btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.form-footnote {
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}

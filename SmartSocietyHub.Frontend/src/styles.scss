@@ -1,0 +1,7 @@
+// Horizon Residencia — global styles entry point.
+// Design tokens, reset, and shared component primitives live in
+// src/styles/ so every feature module can draw on one consistent
+// visual language instead of re-defining it per component.
+@use "styles/tokens";
+@use "styles/base";
+@use "styles/components";

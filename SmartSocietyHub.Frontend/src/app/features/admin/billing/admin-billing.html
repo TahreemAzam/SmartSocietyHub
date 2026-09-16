@@ -1,0 +1,302 @@
+<app-page-header title="Billing" subtitle="Configure charges, generate bills and verify resident payments.">
+</app-page-header>
+
+<div class="tab-row">
+  <button type="button" class="tab" [class.tab-active]="activeTab() === 'charges'" (click)="activeTab.set('charges')">
+    Charges
+  </button>
+  <button type="button" class="tab" [class.tab-active]="activeTab() === 'bills'" (click)="activeTab.set('bills')">
+    Bills
+  </button>
+  <button type="button" class="tab" [class.tab-active]="activeTab() === 'payments'" (click)="activeTab.set('payments')">
+    Payment Verification
+    @if (pendingPayments().length > 0) {
+      <span class="tab-count">{{ pendingPayments().length }}</span>
+    }
+  </button>
+</div>
+
+@if (activeTab() === 'charges') {
+  <div class="card charges-card">
+    @if (!chargesConfigured()) {
+      <div class="alert alert-warning" role="alert" style="margin-bottom: var(--space-5);">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20L12 3z"></path><line x1="12" y1="10" x2="12" y2="15"></line><line x1="12" y1="17.5" x2="12.01" y2="17.5"></line></svg>
+        <span>Billing charges haven't been configured yet. Set them below before generating bills.</span>
+      </div>
+    }
+
+    <form [formGroup]="chargesForm" (ngSubmit)="saveCharges()" novalidate>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label" for="maintenanceAmount">Maintenance (Rs.)</label>
+          <input id="maintenanceAmount" type="number" min="0" step="0.01" class="input" formControlName="maintenanceAmount" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="securityAmount">Security (Rs.)</label>
+          <input id="securityAmount" type="number" min="0" step="0.01" class="input" formControlName="securityAmount" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="waterAmount">Water (Rs.)</label>
+          <input id="waterAmount" type="number" min="0" step="0.01" class="input" formControlName="waterAmount" />
+        </div>
+
+        <div class="field">
+          <label class="field-label">Total Monthly Charge</label>
+          <p class="total-display">Rs. {{ chargesTotal() | number: '1.2-2' }}</p>
+        </div>
+      </div>
+
+      @if (charges()) {
+        <p class="field-hint">Last updated {{ charges()!.updatedAt | date: 'medium' }}</p>
+      }
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [class.btn-loading]="savingCharges()" [disabled]="savingCharges()">
+          Save Charges
+        </button>
+      </div>
+    </form>
+  </div>
+}
+
+@if (activeTab() === 'bills') {
+  <div class="section-actions">
+    <button type="button" class="btn btn-primary" (click)="openGenerateForm()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      Generate Bills
+    </button>
+  </div>
+
+  <div class="card table-card">
+    @if (loading()) {
+      <div style="padding: var(--space-8);">
+        <div class="skeleton" style="width: 200px; height: 16px;"></div>
+      </div>
+    } @else if (loadError()) {
+      <div class="alert alert-danger" role="alert">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span>{{ loadError() }}</span>
+      </div>
+    } @else if (bills().length === 0) {
+      <app-empty-state title="No bills yet" message="Generate bills for a billing month to get started.">
+        <svg icon viewBox="0 0 24 24"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3z"></path></svg>
+      </app-empty-state>
+    } @else {
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Resident</th>
+              <th>Month</th>
+              <th>Due Date</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bill of bills(); track bill.id) {
+              <tr>
+                <td>{{ bill.invoiceNumber }}</td>
+                <td class="table-cell-secondary">{{ bill.residentName }}</td>
+                <td class="table-cell-secondary">{{ bill.billingMonth | date: 'MMMM yyyy' }}</td>
+                <td class="table-cell-secondary">{{ bill.dueDate | date: 'mediumDate' }}</td>
+                <td>Rs. {{ bill.totalAmount | number: '1.2-2' }}</td>
+                <td>
+                  <span class="badge"
+                    [class.badge-success]="bill.status === 'Paid'"
+                    [class.badge-warning]="bill.status === 'PendingVerification'"
+                    [class.badge-danger]="bill.status === 'Overdue'"
+                    [class.badge-neutral]="bill.status === 'Unpaid'"
+                  >{{ bill.status }}</span>
+                </td>
+                <td>
+                  <div class="table-actions">
+                    @if (bill.status === 'Unpaid' || bill.status === 'Overdue') {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="openEditBill(bill)">Edit</button>
+                    }
+                    <button type="button" class="btn btn-ghost btn-sm" [class.btn-loading]="downloadingId() === bill.id" [disabled]="downloadingId() === bill.id" (click)="downloadInvoice(bill)">
+                      Invoice
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}
+
+@if (activeTab() === 'payments') {
+  <div class="card table-card">
+    @if (pendingPayments().length === 0) {
+      <app-empty-state title="No pending payments" message="Payment submissions awaiting verification will appear here.">
+        <svg icon viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+      </app-empty-state>
+    } @else {
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Resident</th>
+              <th>Amount</th>
+              <th>Submitted</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payment of pendingPayments(); track payment.id) {
+              <tr>
+                <td>{{ payment.invoiceNumber }}</td>
+                <td class="table-cell-secondary">{{ payment.residentName }}</td>
+                <td>Rs. {{ payment.amount | number: '1.2-2' }}</td>
+                <td class="table-cell-secondary">{{ payment.submittedAt | date: 'medium' }}</td>
+                <td>
+                  <div class="table-actions">
+                    <button type="button" class="btn btn-primary btn-sm" (click)="reviewPayment(payment)">Review</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}
+
+@if (showGenerateForm()) {
+  <app-modal title="Generate Bills" subtitle="Bills are created for every active resident who doesn't already have one for this month." (closed)="showGenerateForm.set(false)">
+    <form [formGroup]="generateForm" (ngSubmit)="submitGenerate()" novalidate>
+      @if (generateError()) {
+        <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>{{ generateError() }}</span>
+        </div>
+      }
+
+      <div class="field" style="margin-bottom: var(--space-5);">
+        <label class="field-label" for="billingMonth">Billing Month</label>
+        <input id="billingMonth" type="month" class="input" formControlName="billingMonth" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="dueDate">Due Date</label>
+        <input id="dueDate" type="date" class="input" formControlName="dueDate" />
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="showGenerateForm.set(false)" [disabled]="generating()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [class.btn-loading]="generating()" [disabled]="generating()">
+          Generate
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (editingBill(); as bill) {
+  <app-modal title="Edit Bill" [subtitle]="bill.invoiceNumber" (closed)="editingBill.set(null)">
+    <form [formGroup]="editBillForm" (ngSubmit)="submitEditBill()" novalidate>
+      @if (editBillError()) {
+        <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>{{ editBillError() }}</span>
+        </div>
+      }
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label" for="editBillingMonth">Billing Month</label>
+          <input id="editBillingMonth" type="month" class="input" formControlName="billingMonth" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="editDueDate">Due Date</label>
+          <input id="editDueDate" type="date" class="input" formControlName="dueDate" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="editMaintenance">Maintenance (Rs.)</label>
+          <input id="editMaintenance" type="number" min="0" step="0.01" class="input" formControlName="maintenanceAmount" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="editSecurity">Security (Rs.)</label>
+          <input id="editSecurity" type="number" min="0" step="0.01" class="input" formControlName="securityAmount" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="editWater">Water (Rs.)</label>
+          <input id="editWater" type="number" min="0" step="0.01" class="input" formControlName="waterAmount" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="editingBill.set(null)" [disabled]="savingBill()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [class.btn-loading]="savingBill()" [disabled]="savingBill()">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}
+
+@if (reviewingPayment(); as payment) {
+  <app-modal title="Review Payment" [subtitle]="payment.invoiceNumber + ' — ' + payment.residentName" (closed)="closeReview()">
+    <div class="proof-wrapper">
+      @if (loadingProof()) {
+        <div class="skeleton" style="width: 100%; height: 260px;"></div>
+      } @else if (proofImageUrl()) {
+        <img [src]="proofImageUrl()" alt="Payment proof" class="proof-image" />
+      } @else {
+        <p class="field-hint">Payment proof could not be loaded.</p>
+      }
+    </div>
+
+    <dl class="detail-grid" style="margin-top: var(--space-5);">
+      <div>
+        <dt>Amount Submitted</dt>
+        <dd>Rs. {{ payment.amount | number: '1.2-2' }}</dd>
+      </div>
+      <div>
+        <dt>Submitted At</dt>
+        <dd>{{ payment.submittedAt | date: 'medium' }}</dd>
+      </div>
+    </dl>
+
+    @if (!showRejectForm()) {
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" [disabled]="reviewing()" (click)="showRejectForm.set(true)">
+          Reject
+        </button>
+        <button type="button" class="btn btn-primary" [class.btn-loading]="reviewing()" [disabled]="reviewing()" (click)="approvePayment()">
+          Approve &amp; Mark Paid
+        </button>
+      </div>
+    } @else {
+      <form [formGroup]="rejectForm" (ngSubmit)="submitRejection()" novalidate class="reject-form">
+        <div class="field" [class.is-invalid]="rejectForm.controls.rejectionReason.invalid && rejectForm.controls.rejectionReason.touched">
+          <label class="field-label" for="rejectionReason">Reason for rejection</label>
+          <textarea id="rejectionReason" class="input" formControlName="rejectionReason" rows="3" placeholder="e.g. Receipt amount does not match the bill total."></textarea>
+          @if (rejectForm.controls.rejectionReason.invalid && rejectForm.controls.rejectionReason.touched) {
+            <p class="field-error">A reason is required to reject a payment.</p>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" [disabled]="reviewing()" (click)="showRejectForm.set(false)">Back</button>
+          <button type="submit" class="btn btn-danger" [class.btn-loading]="reviewing()" [disabled]="reviewing()">
+            Confirm Rejection
+          </button>
+        </div>
+      </form>
+    }
+  </app-modal>
+}

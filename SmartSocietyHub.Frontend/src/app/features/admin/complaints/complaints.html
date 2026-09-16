@@ -1,0 +1,183 @@
+<app-page-header
+  title="Complaints"
+  subtitle="Review resident complaints and assign them to maintenance staff."
+>
+</app-page-header>
+
+<div class="filter-row">
+  @for (status of statusFilters; track status) {
+    <button
+      type="button"
+      class="filter-chip"
+      [class.filter-chip-active]="selectedStatus() === status"
+      (click)="selectedStatus.set(status)"
+    >
+      {{ status }}
+    </button>
+  }
+</div>
+
+<div class="card table-card">
+  @if (loading()) {
+    <div class="table-scroll">
+      <table class="table">
+        <tbody>
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <tr>
+              <td><div class="skeleton" style="width: 140px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 110px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 80px; height: 20px; border-radius: 999px;"></div></td>
+              <td></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (loadError()) {
+    <div class="alert alert-danger" role="alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <span>{{ loadError() }}</span>
+    </div>
+  } @else if (filteredComplaints().length === 0) {
+    <app-empty-state
+      title="No complaints found"
+      message="There are no complaints matching this filter."
+    >
+      <svg icon viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"></rect><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"></path></svg>
+    </app-empty-state>
+  } @else {
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Resident</th>
+            <th>Property</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (complaint of filteredComplaints(); track complaint.id) {
+            <tr>
+              <td>{{ complaint.title }}</td>
+              <td class="table-cell-secondary">{{ complaint.residentName }}</td>
+              <td class="table-cell-secondary">House {{ complaint.houseNumber }}, {{ complaint.block }}</td>
+              <td class="table-cell-secondary">{{ complaint.category }}</td>
+              <td>
+                <span class="badge" [class]="badgeClass(complaint.status)">{{ complaint.status }}</span>
+              </td>
+              <td class="table-cell-secondary">{{ complaint.assignedToUserName || '—' }}</td>
+              <td>
+                <div class="table-actions">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="viewComplaint(complaint)">View</button>
+                  @if (complaint.status === 'Open') {
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="openAssignForm(complaint)">Assign</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (viewingComplaint(); as complaint) {
+  <app-modal title="Complaint Details" (closed)="viewingComplaint.set(null)">
+    <dl class="detail-grid">
+      <div>
+        <dt>Title</dt>
+        <dd>{{ complaint.title }}</dd>
+      </div>
+      <div>
+        <dt>Category</dt>
+        <dd>{{ complaint.category }}</dd>
+      </div>
+      <div>
+        <dt>Resident</dt>
+        <dd>{{ complaint.residentName }}</dd>
+      </div>
+      <div>
+        <dt>Property</dt>
+        <dd>House {{ complaint.houseNumber }}, Block {{ complaint.block }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd><span class="badge" [class]="badgeClass(complaint.status)">{{ complaint.status }}</span></dd>
+      </div>
+      <div>
+        <dt>Assigned To</dt>
+        <dd>{{ complaint.assignedToUserName || 'Not yet assigned' }}</dd>
+      </div>
+      <div class="detail-full">
+        <dt>Description</dt>
+        <dd>{{ complaint.description }}</dd>
+      </div>
+      <div>
+        <dt>Created</dt>
+        <dd>{{ complaint.createdAt | date: 'medium' }}</dd>
+      </div>
+      @if (complaint.resolvedAt) {
+        <div>
+          <dt>Resolved</dt>
+          <dd>{{ complaint.resolvedAt | date: 'medium' }}</dd>
+        </div>
+      }
+      @if (complaint.closedAt) {
+        <div>
+          <dt>Closed</dt>
+          <dd>{{ complaint.closedAt | date: 'medium' }}</dd>
+        </div>
+      }
+      @if (complaint.reopenedAt) {
+        <div>
+          <dt>Reopened</dt>
+          <dd>{{ complaint.reopenedAt | date: 'medium' }}</dd>
+        </div>
+      }
+    </dl>
+  </app-modal>
+}
+
+@if (assigningComplaint(); as complaint) {
+  <app-modal
+    title="Assign Complaint"
+    [subtitle]="complaint.title"
+    (closed)="assigningComplaint.set(null)"
+  >
+    <form [formGroup]="assignForm" (ngSubmit)="submitAssign()" novalidate>
+      @if (assignError()) {
+        <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>{{ assignError() }}</span>
+        </div>
+      }
+
+      <div class="field" [class.is-invalid]="assignForm.controls.maintenanceStaffUserId.invalid && assignForm.controls.maintenanceStaffUserId.touched">
+        <label class="field-label" for="staffSelect">Maintenance Staff Member</label>
+        <select id="staffSelect" class="select" formControlName="maintenanceStaffUserId">
+          <option value="" disabled>Select a staff member</option>
+          @for (member of staff(); track member.userId) {
+            <option [value]="member.userId">{{ member.fullName }}</option>
+          }
+        </select>
+        @if (staff().length === 0) {
+          <p class="field-hint">No maintenance staff exist yet. Add one under Maintenance Staff first.</p>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="assigningComplaint.set(null)" [disabled]="assigning()">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [class.btn-loading]="assigning()" [disabled]="assigning()">
+          Assign
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

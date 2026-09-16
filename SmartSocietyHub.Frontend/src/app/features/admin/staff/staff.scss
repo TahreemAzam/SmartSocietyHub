@@ -1,0 +1,20 @@
+:host {
+  display: block;
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-card .table {
+  th:first-child,
+  td:first-child {
+    padding-left: var(--space-5);
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: var(--space-5);
+  }
+}

@@ -1,0 +1,93 @@
+<app-page-header title="Community Updates" subtitle="Announcements and events from the management.">
+</app-page-header>
+
+@if (loading()) {
+  <div class="card" style="padding: var(--space-8);">
+    <div class="skeleton" style="width: 200px; height: 16px;"></div>
+  </div>
+} @else if (loadError()) {
+  <div class="alert alert-danger" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    <span>{{ loadError() }}</span>
+  </div>
+} @else {
+  @if (upcomingEvents().length > 0) {
+    <h2 class="section-heading">Upcoming Events</h2>
+
+    <div class="event-strip">
+      @for (event of upcomingEvents(); track event.id) {
+        <div class="card event-card" role="button" tabindex="0" (click)="viewUpdate(event)" (keydown.enter)="viewUpdate(event)">
+          @if (isUnseen(event)) {
+            <span class="new-dot" aria-label="Unseen"></span>
+          }
+          <p class="event-date">{{ event.eventDate | date: 'EEE, MMM d' }}</p>
+          <p class="event-title">{{ event.title }}</p>
+          <p class="event-location">{{ event.location }}</p>
+        </div>
+      }
+    </div>
+  }
+
+  <h2 class="section-heading" style="margin-top: var(--space-8);">All Updates</h2>
+
+  @if (updates().length === 0) {
+    <div class="card">
+      <app-empty-state title="No updates yet" message="Announcements and events from the management will appear here.">
+        <svg icon viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h2l3 5V4l-3 5H4a1 1 0 0 0-1 1z"></path></svg>
+      </app-empty-state>
+    </div>
+  } @else {
+    <div class="update-list">
+      @for (update of updates(); track update.id) {
+        <div class="card update-card" role="button" tabindex="0" (click)="viewUpdate(update)" (keydown.enter)="viewUpdate(update)">
+          @if (isUnseen(update)) {
+            <span class="new-dot" aria-label="Unseen"></span>
+          }
+
+          <div class="update-card-heading">
+            <span class="badge" [class.badge-info]="update.type === 'Announcement'" [class.badge-gold]="update.type === 'Event'">
+              {{ update.type }}
+            </span>
+            <span class="update-timestamp">{{ update.publishedAt | date: 'medium' }}</span>
+          </div>
+
+          <p class="update-title">{{ update.title }}</p>
+          <p class="update-description">{{ update.description }}</p>
+
+          @if (update.type === 'Event') {
+            <p class="update-event-meta">
+              {{ update.eventDate | date: 'mediumDate' }}, {{ update.startTime?.slice(0, 5) }}–{{ update.endTime?.slice(0, 5) }} · {{ update.location }}
+            </p>
+          }
+        </div>
+      }
+    </div>
+  }
+}
+
+@if (viewingUpdate(); as update) {
+  <app-modal [title]="update.title" (closed)="viewingUpdate.set(null)">
+    <span class="badge" [class.badge-info]="update.type === 'Announcement'" [class.badge-gold]="update.type === 'Event'" style="margin-bottom: var(--space-4); display: inline-block;">
+      {{ update.type }}
+    </span>
+
+    <p class="detail-description">{{ update.description }}</p>
+
+    @if (update.type === 'Event') {
+      <dl class="detail-grid">
+        <div>
+          <dt>Date</dt>
+          <dd>{{ update.eventDate | date: 'mediumDate' }}</dd>
+        </div>
+        <div>
+          <dt>Time</dt>
+          <dd>{{ update.startTime?.slice(0, 5) }} – {{ update.endTime?.slice(0, 5) }}</dd>
+        </div>
+        <div class="detail-full">
+          <dt>Location</dt>
+          <dd>{{ update.location }}</dd>
+        </div>
+      </dl>
+    }
+  </app-modal>
+}

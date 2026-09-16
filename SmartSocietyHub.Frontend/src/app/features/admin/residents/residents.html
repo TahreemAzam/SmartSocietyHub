@@ -1,0 +1,110 @@
+<app-page-header
+  title="Residents"
+  subtitle="Manage owners, tenants and their family members across the society."
+>
+  <button type="button" class="btn btn-primary" (click)="openCreateForm()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    Add Resident
+  </button>
+</app-page-header>
+
+<div class="card table-card">
+  <div class="table-toolbar">
+    <div class="search-field">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <input
+        type="search"
+        placeholder="Search by name, CNIC, house or block..."
+        [value]="searchTerm()"
+        (input)="searchTerm.set($any($event.target).value)"
+        aria-label="Search residents"
+      />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="table-scroll">
+      <table class="table">
+        <tbody>
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <tr>
+              <td><div class="skeleton" style="width: 120px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 110px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 80px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 60px; height: 20px; border-radius: 999px;"></div></td>
+              <td></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (loadError()) {
+    <div class="alert alert-danger" role="alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <span>{{ loadError() }}</span>
+    </div>
+  } @else if (filteredResidents().length === 0) {
+    <app-empty-state
+      [title]="residents().length === 0 ? 'No residents yet' : 'No matching residents'"
+      [message]="residents().length === 0 ? 'Add the first resident to link them to a property and issue their login.' : 'Try a different search term.'"
+    >
+      <svg icon viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 19c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"></path></svg>
+    </app-empty-state>
+  } @else {
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>CNIC</th>
+            <th>Property</th>
+            <th>Phone</th>
+            <th>Family</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (resident of filteredResidents(); track resident.id) {
+            <tr>
+              <td>{{ resident.fullName }}</td>
+              <td class="table-cell-secondary">{{ resident.cnic }}</td>
+              <td>House {{ resident.houseNumber }}, Block {{ resident.block }}</td>
+              <td class="table-cell-secondary">{{ resident.phoneNumber }}</td>
+              <td>{{ resident.numberOfFamilyMembers }}</td>
+              <td>
+                <span class="badge" [class.badge-success]="resident.status === 'Active'" [class.badge-neutral]="resident.status !== 'Active'">
+                  {{ resident.status }}
+                </span>
+              </td>
+              <td>
+                <div class="table-actions">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="openEditForm(resident)">Edit</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="deleteResident(resident)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (showForm()) {
+  <app-resident-form-modal
+    [residentToEdit]="editingResident()"
+    [properties]="properties()"
+    (saved)="onSaved($event)"
+    (closedModal)="showForm.set(false)"
+  ></app-resident-form-modal>
+}
+
+@if (newCredentials(); as credentials) {
+  <app-credentials-modal
+    [personName]="credentials.resident.fullName"
+    [loginEmail]="credentials.loginEmail"
+    [temporaryPassword]="credentials.temporaryPassword"
+    (acknowledged)="newCredentials.set(null)"
+  ></app-credentials-modal>
+}

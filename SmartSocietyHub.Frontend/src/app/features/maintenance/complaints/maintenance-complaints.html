@@ -1,0 +1,109 @@
+<app-page-header title="Assigned Complaints" subtitle="Complaints that have been assigned to you.">
+</app-page-header>
+
+<div class="card table-card">
+  @if (loading()) {
+    <div class="table-scroll">
+      <table class="table">
+        <tbody>
+          @for (i of [1, 2, 3]; track i) {
+            <tr>
+              <td><div class="skeleton" style="width: 160px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 120px; height: 14px;"></div></td>
+              <td><div class="skeleton" style="width: 80px; height: 20px; border-radius: 999px;"></div></td>
+              <td></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (loadError()) {
+    <div class="alert alert-danger" role="alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <span>{{ loadError() }}</span>
+    </div>
+  } @else if (complaints().length === 0) {
+    <app-empty-state
+      title="No complaints assigned"
+      message="You'll see complaints here once the administrator assigns them to you."
+    >
+      <svg icon viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"></rect><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"></path></svg>
+    </app-empty-state>
+  } @else {
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Property</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (complaint of complaints(); track complaint.id) {
+            <tr>
+              <td>{{ complaint.title }}</td>
+              <td class="table-cell-secondary">House {{ complaint.houseNumber }}, {{ complaint.block }}</td>
+              <td class="table-cell-secondary">{{ complaint.category }}</td>
+              <td>
+                <span class="badge" [class]="badgeClass(complaint.status)">{{ complaint.status }}</span>
+              </td>
+              <td>
+                <div class="table-actions">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="viewComplaint(complaint)">View</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (viewingComplaint(); as complaint) {
+  <app-modal title="Complaint Details" (closed)="viewingComplaint.set(null)">
+    <dl class="detail-grid">
+      <div>
+        <dt>Title</dt>
+        <dd>{{ complaint.title }}</dd>
+      </div>
+      <div>
+        <dt>Category</dt>
+        <dd>{{ complaint.category }}</dd>
+      </div>
+      <div>
+        <dt>Property</dt>
+        <dd>House {{ complaint.houseNumber }}, Block {{ complaint.block }}</dd>
+      </div>
+      <div>
+        <dt>Status</dt>
+        <dd><span class="badge" [class]="badgeClass(complaint.status)">{{ complaint.status }}</span></dd>
+      </div>
+      <div class="detail-full">
+        <dt>Description</dt>
+        <dd>{{ complaint.description }}</dd>
+      </div>
+      <div>
+        <dt>Reported</dt>
+        <dd>{{ complaint.createdAt | date: 'medium' }}</dd>
+      </div>
+    </dl>
+
+    @if (complaint.status === 'Assigned' || complaint.status === 'Reopened') {
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" [class.btn-loading]="updating()" [disabled]="updating()" (click)="startProgress(complaint)">
+          Start Progress
+        </button>
+      </div>
+    } @else if (complaint.status === 'InProgress') {
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" [class.btn-loading]="updating()" [disabled]="updating()" (click)="markResolved(complaint)">
+          Mark Resolved
+        </button>
+      </div>
+    }
+  </app-modal>
+}

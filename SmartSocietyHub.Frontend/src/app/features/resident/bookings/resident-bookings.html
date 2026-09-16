@@ -1,0 +1,148 @@
+<app-page-header title="Facility Bookings" subtitle="Book shared facilities and manage your upcoming reservations.">
+</app-page-header>
+
+@if (loading()) {
+  <div class="card" style="padding: var(--space-8);">
+    <div class="skeleton" style="width: 200px; height: 16px; margin-bottom: var(--space-3);"></div>
+    <div class="skeleton" style="width: 320px; height: 14px;"></div>
+  </div>
+} @else if (loadError()) {
+  <div class="alert alert-danger" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    <span>{{ loadError() }}</span>
+  </div>
+} @else {
+  <h2 class="section-heading">Available Facilities</h2>
+
+  @if (activeFacilities().length === 0) {
+    <div class="card">
+      <app-empty-state title="No facilities available" message="Check back once the management adds shared facilities.">
+        <svg icon viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="1.5"></rect></svg>
+      </app-empty-state>
+    </div>
+  } @else {
+    <div class="facility-grid">
+      @for (facility of activeFacilities(); track facility.id) {
+        <div class="card facility-card">
+          <p class="facility-name">{{ facility.name }}</p>
+
+          @if (facility.location) {
+            <p class="facility-location">{{ facility.location }}</p>
+          }
+
+          @if (facility.description) {
+            <p class="facility-description">{{ facility.description }}</p>
+          }
+
+          <p class="facility-hours">
+            Open {{ formatTimeLabel(facility.openingTime) }} – {{ formatTimeLabel(facility.closingTime) }}
+          </p>
+
+          <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openBookingForm(facility)">
+            Book Now
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <h2 class="section-heading" style="margin-top: var(--space-8);">My Bookings</h2>
+
+  <div class="card table-card">
+    @if (bookings().length === 0) {
+      <app-empty-state title="No bookings yet" message="Book a facility above to see it listed here.">
+        <svg icon viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="1.5"></rect><line x1="4" y1="10" x2="20" y2="10"></line></svg>
+      </app-empty-state>
+    } @else {
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Facility</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (booking of bookings(); track booking.id) {
+              <tr>
+                <td>{{ booking.facilityName }}</td>
+                <td class="table-cell-secondary">{{ booking.bookingDate | date: 'mediumDate' }}</td>
+                <td class="table-cell-secondary">{{ formatTimeLabel(booking.startTime) }} – {{ formatTimeLabel(booking.endTime) }}</td>
+                <td>
+                  <span class="badge" [class.badge-success]="booking.status === 'Confirmed'" [class.badge-neutral]="booking.status === 'Completed'" [class.badge-danger]="booking.status === 'Cancelled'">
+                    {{ booking.status }}
+                  </span>
+                </td>
+                <td>
+                  @if (booking.status === 'Confirmed') {
+                    <div class="table-actions">
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="openEditForm(booking)">Edit</button>
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="cancelBooking(booking)">Cancel</button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}
+
+@if (showForm()) {
+  <app-modal [title]="editingBooking() ? 'Edit Booking' : 'Book Facility'" (closed)="closeForm()">
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (formError()) {
+        <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>{{ formError() }}</span>
+        </div>
+      }
+
+      <div class="field" style="margin-bottom: var(--space-5);">
+        <label class="field-label" for="facilityId">Facility</label>
+        <select id="facilityId" class="select" formControlName="facilityId">
+          <option value="" disabled>Select a facility</option>
+          @for (facility of activeFacilities(); track facility.id) {
+            <option [value]="facility.id">{{ facility.name }}</option>
+          }
+        </select>
+
+        @if (selectedFacility(); as facility) {
+          <p class="field-hint">
+            Available {{ formatTimeLabel(facility.openingTime) }} – {{ formatTimeLabel(facility.closingTime) }}.
+            A {{ facility.bufferMinutes }}-minute buffer is kept after every booking for cleaning.
+          </p>
+        }
+      </div>
+
+      <div class="form-grid">
+        <div class="field form-grid-full">
+          <label class="field-label" for="bookingDate">Date</label>
+          <input id="bookingDate" type="date" class="input" [min]="today" formControlName="bookingDate" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="startTime">Start Time</label>
+          <input id="startTime" type="time" class="input" formControlName="startTime" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="endTime">End Time</label>
+          <input id="endTime" type="time" class="input" formControlName="endTime" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeForm()" [disabled]="saving()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [class.btn-loading]="saving()" [disabled]="saving()">
+          {{ editingBooking() ? 'Save Changes' : 'Confirm Booking' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

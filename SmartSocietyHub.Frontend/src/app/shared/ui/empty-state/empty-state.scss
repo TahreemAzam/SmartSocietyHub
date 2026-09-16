@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-12) var(--space-6);
+  color: var(--color-text-secondary);
+}
+
+.empty-state-icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-surface-sunken);
+  color: var(--color-grey-500);
+  margin-bottom: var(--space-2);
+
+  ::ng-deep svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.empty-state h3 {
+  font-size: var(--fs-md);
+  color: var(--color-text-primary);
+}
+
+.empty-state p {
+  max-width: 360px;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-relaxed);
+}

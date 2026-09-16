@@ -1,0 +1,173 @@
+<app-page-header
+  title="Facilities & Bookings"
+  subtitle="Manage shared facilities and review resident bookings."
+>
+  @if (activeTab() === 'facilities') {
+    <button type="button" class="btn btn-primary" (click)="openCreateForm()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+      Add Facility
+    </button>
+  }
+</app-page-header>
+
+<div class="tab-row">
+  <button type="button" class="tab" [class.tab-active]="activeTab() === 'facilities'" (click)="activeTab.set('facilities')">
+    Facilities
+  </button>
+  <button type="button" class="tab" [class.tab-active]="activeTab() === 'bookings'" (click)="activeTab.set('bookings')">
+    All Bookings
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="card" style="padding: var(--space-8);">
+    <div class="skeleton" style="width: 200px; height: 16px; margin-bottom: var(--space-3);"></div>
+    <div class="skeleton" style="width: 320px; height: 14px;"></div>
+  </div>
+} @else if (loadError()) {
+  <div class="alert alert-danger" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    <span>{{ loadError() }}</span>
+  </div>
+} @else if (activeTab() === 'facilities') {
+  @if (facilities().length === 0) {
+    <div class="card">
+      <app-empty-state title="No facilities yet" message="Add the first shared facility, like a pool or sports court.">
+        <svg icon viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="1.5"></rect></svg>
+      </app-empty-state>
+    </div>
+  } @else {
+    <div class="facility-grid">
+      @for (facility of facilities(); track facility.id) {
+        <div class="card facility-card">
+          <div class="facility-card-header">
+            <p class="facility-name">{{ facility.name }}</p>
+            <span class="badge" [class.badge-success]="facility.isActive" [class.badge-neutral]="!facility.isActive">
+              {{ facility.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+
+          @if (facility.location) {
+            <p class="facility-location">{{ facility.location }}</p>
+          }
+
+          @if (facility.description) {
+            <p class="facility-description">{{ facility.description }}</p>
+          }
+
+          <div class="facility-meta">
+            <span>{{ formatTimeLabel(facility.openingTime) }} – {{ formatTimeLabel(facility.closingTime) }}</span>
+            <span>{{ facility.bufferMinutes }} min buffer</span>
+          </div>
+
+          <div class="facility-actions">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="openEditForm(facility)">Edit</button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="deleteFacility(facility)">Delete</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+} @else {
+  <div class="card table-card">
+    @if (bookings().length === 0) {
+      <app-empty-state title="No bookings yet" message="Resident bookings will appear here once they're made.">
+        <svg icon viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="1.5"></rect><line x1="4" y1="10" x2="20" y2="10"></line></svg>
+      </app-empty-state>
+    } @else {
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Facility</th>
+              <th>Resident</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (booking of bookings(); track booking.id) {
+              <tr>
+                <td>{{ booking.facilityName }}</td>
+                <td class="table-cell-secondary">{{ booking.residentName }}</td>
+                <td class="table-cell-secondary">{{ booking.bookingDate | date: 'mediumDate' }}</td>
+                <td class="table-cell-secondary">{{ formatTimeLabel(booking.startTime) }} – {{ formatTimeLabel(booking.endTime) }}</td>
+                <td>
+                  <span class="badge" [class.badge-success]="booking.status === 'Confirmed'" [class.badge-neutral]="booking.status === 'Completed'" [class.badge-danger]="booking.status === 'Cancelled'">
+                    {{ booking.status }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}
+
+@if (showForm()) {
+  <app-modal [title]="editingFacility() ? 'Edit Facility' : 'Add Facility'" (closed)="closeForm()">
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (formError()) {
+        <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>{{ formError() }}</span>
+        </div>
+      }
+
+      <div class="field" [class.is-invalid]="form.controls.name.invalid && form.controls.name.touched" style="margin-bottom: var(--space-5);">
+        <label class="field-label" for="name">Name</label>
+        <input id="name" class="input" formControlName="name" placeholder="e.g. Swimming Pool" />
+        @if (form.controls.name.invalid && form.controls.name.touched) {
+          <p class="field-error">Name is required.</p>
+        }
+      </div>
+
+      <div class="field" style="margin-bottom: var(--space-5);">
+        <label class="field-label" for="location">Location (Optional)</label>
+        <input id="location" class="input" formControlName="location" placeholder="e.g. Near Block C" />
+      </div>
+
+      <div class="field" style="margin-bottom: var(--space-5);">
+        <label class="field-label" for="description">Description (Optional)</label>
+        <textarea id="description" class="input" formControlName="description" rows="3"></textarea>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label" for="openingTime">Opening Time</label>
+          <input id="openingTime" type="time" class="input" formControlName="openingTime" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="closingTime">Closing Time</label>
+          <input id="closingTime" type="time" class="input" formControlName="closingTime" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="bufferMinutes">Buffer After Booking (minutes)</label>
+          <input id="bufferMinutes" type="number" min="0" class="input" formControlName="bufferMinutes" />
+        </div>
+
+        @if (editingFacility()) {
+          <div class="field">
+            <label class="field-label" for="isActive">Status</label>
+            <select id="isActive" class="select" [value]="form.controls.isActive.value" (change)="form.controls.isActive.setValue($any($event.target).value === 'true')">
+              <option [value]="true">Active</option>
+              <option [value]="false">Inactive (under maintenance)</option>
+            </select>
+          </div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeForm()" [disabled]="saving()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [class.btn-loading]="saving()" [disabled]="saving()">
+          {{ editingFacility() ? 'Save Changes' : 'Create Facility' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

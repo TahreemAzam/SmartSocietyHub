@@ -1,0 +1,149 @@
+<app-page-header title="Billing & Payments" subtitle="View your bills, download invoices and submit payment proof.">
+</app-page-header>
+
+@if (loading()) {
+  <div class="card" style="padding: var(--space-8);">
+    <div class="skeleton" style="width: 200px; height: 16px;"></div>
+  </div>
+} @else if (loadError()) {
+  <div class="alert alert-danger" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    <span>{{ loadError() }}</span>
+  </div>
+} @else {
+  <h2 class="section-heading">My Bills</h2>
+
+  <div class="card table-card">
+    @if (bills().length === 0) {
+      <app-empty-state title="No bills yet" message="Bills will appear here once the management generates them.">
+        <svg icon viewBox="0 0 24 24"><path d="M6 3h12v18l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V3z"></path></svg>
+      </app-empty-state>
+    } @else {
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Month</th>
+              <th>Due Date</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th class="actions-col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bill of bills(); track bill.id) {
+              <tr>
+                <td>{{ bill.invoiceNumber }}</td>
+                <td class="table-cell-secondary">{{ bill.billingMonth | date: 'MMMM yyyy' }}</td>
+                <td class="table-cell-secondary">{{ bill.dueDate | date: 'mediumDate' }}</td>
+                <td>Rs. {{ bill.totalAmount | number: '1.2-2' }}</td>
+                <td>
+                  <span class="badge"
+                    [class.badge-success]="bill.status === 'Paid'"
+                    [class.badge-warning]="bill.status === 'PendingVerification'"
+                    [class.badge-danger]="bill.status === 'Overdue'"
+                    [class.badge-neutral]="bill.status === 'Unpaid'"
+                  >{{ bill.status }}</span>
+                </td>
+                <td class="actions-col">
+                  <div class="table-actions">
+                    @if (bill.status === 'Unpaid' || bill.status === 'Overdue') {
+                      <button type="button" class="btn btn-primary btn-sm" (click)="openPaymentForm(bill)">Pay Now</button>
+                    }
+                    <button type="button" class="btn btn-ghost btn-sm" [class.btn-loading]="downloadingId() === bill.id" [disabled]="downloadingId() === bill.id" (click)="downloadInvoice(bill)">
+                      Invoice
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <h2 class="section-heading" style="margin-top: var(--space-8);">Payment History</h2>
+
+  <div class="card table-card">
+    @if (payments().length === 0) {
+      <app-empty-state title="No payments submitted" message="Your submitted payments and their verification status will appear here.">
+        <svg icon viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+      </app-empty-state>
+    } @else {
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Amount</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payment of payments(); track payment.id) {
+              <tr>
+                <td>{{ payment.invoiceNumber }}</td>
+                <td>Rs. {{ payment.amount | number: '1.2-2' }}</td>
+                <td class="table-cell-secondary">{{ payment.submittedAt | date: 'medium' }}</td>
+                <td>
+                  <span class="badge"
+                    [class.badge-success]="payment.status === 'Verified'"
+                    [class.badge-warning]="payment.status === 'Pending'"
+                    [class.badge-danger]="payment.status === 'Rejected'"
+                  >{{ payment.status }}</span>
+                </td>
+                <td class="table-cell-secondary">{{ payment.rejectionReason || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}
+
+@if (payingBill(); as bill) {
+  <app-modal title="Submit Payment" [subtitle]="bill.invoiceNumber" (closed)="closePaymentForm()">
+    @if (submitError()) {
+      <div class="alert alert-danger" role="alert" style="margin-bottom: var(--space-5);">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span>{{ submitError() }}</span>
+      </div>
+    }
+
+    <div class="alert alert-info" role="note" style="margin-bottom: var(--space-5);">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12.5"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <span>
+        Pay the exact invoice amount to the society's bank account (see your downloaded invoice for
+        details), then upload a photo or screenshot of the receipt below.
+      </span>
+    </div>
+
+    <div class="field" style="margin-bottom: var(--space-5);">
+      <label class="field-label">Amount Due</label>
+      <p class="amount-display">Rs. {{ bill.totalAmount | number: '1.2-2' }}</p>
+    </div>
+
+    <div class="field" [class.is-invalid]="fileError()">
+      <label class="field-label" for="proof">Payment Receipt (JPG or PNG, max 5MB)</label>
+      <input id="proof" type="file" class="input" accept="image/jpeg,image/png" (change)="onFileSelected($event)" />
+      @if (fileError()) {
+        <p class="field-error">{{ fileError() }}</p>
+      }
+      @if (selectedFile()) {
+        <p class="field-hint">Selected: {{ selectedFile()!.name }}</p>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="closePaymentForm()" [disabled]="submitting()">Cancel</button>
+      <button type="button" class="btn btn-primary" [class.btn-loading]="submitting()" [disabled]="submitting()" (click)="submitPayment()">
+        Submit Payment
+      </button>
+    </div>
+  </app-modal>
+}
